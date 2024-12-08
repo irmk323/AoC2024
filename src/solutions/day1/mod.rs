@@ -1,13 +1,10 @@
-#[path = "../utils.rs"]
-mod utils;
+use crate::utils;
 
 use std::collections::HashMap;
 
-fn main() {
-    println!("started");
-    
-    if let Ok(contents) =  utils::read_file("input.txt") {
-        
+pub fn solve(day: u32) {
+    println!("Started Day{}!",day );
+    if let Ok(contents) =  utils::read_file( &format!("src/solutions/day{}/input.txt", day)) {
         if let Ok((mut left_vals, mut right_vals)) = process_content(&contents) {
             left_vals.sort();
             right_vals.sort();

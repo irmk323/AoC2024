@@ -1,10 +1,9 @@
-#[path = "../utils.rs"]
-mod utils;
+use crate::utils;
 
-fn main() {
-    println!("started Day2");
+pub fn solve(day: u32) {
+    println!("Started Day{}!",day );
     
-    if let Ok(contents) =  utils::read_file("input.txt") {
+    if let Ok(contents) = utils::read_file( &format!("src/solutions/day{}/input.txt", day)) {
         
         // Parse all lines once
         let all_numbers: Vec<Vec<i32>> = contents
