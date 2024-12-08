@@ -1,24 +1,30 @@
-use std::fs;
+#[path = "../utils.rs"]
+mod utils;
+
 use std::collections::HashMap;
 
 fn main() {
     println!("started");
     
-    // Step 1: Read the file
-    if let Ok(contents) = read_file("input.txt") {
-        // Step 2: Process the content and create arrays
+    if let Ok(contents) =  utils::read_file("input.txt") {
+        
         if let Ok((mut left_vals, mut right_vals)) = process_content(&contents) {
-            // println!("Left values: {:?}", left_vals);
-            // println!("Right values: {:?}", right_vals);
             left_vals.sort();
             right_vals.sort();
-            let diff_sum = calculate_differences(&left_vals, &right_vals);
-            println!("Part1: Sum of differences: {}", diff_sum);
-            let freq_sum = calculate_freq(&left_vals, &right_vals);
-            println!("Part2: Sum of differences: {}", freq_sum);
+            part_1(&mut left_vals, &mut right_vals);
+            part_2(&mut left_vals, &mut right_vals);
         }
     }
-    
+}
+
+fn part_1(left_vals: &mut Vec<i32>, right_vals: &mut Vec<i32>) {
+    let diff_sum = calculate_differences(&left_vals, &right_vals);
+    println!("Part1: Sum of differences: {}", diff_sum);
+}
+
+fn part_2(left_vals: &mut Vec<i32>, right_vals: &mut Vec<i32>) {
+    let freq_sum = calculate_freq(&left_vals, &right_vals);
+    println!("Part2: Sum of differences: {}", freq_sum);
 }
 
 fn calculate_freq(arr1: &Vec<i32>, arr2: &Vec<i32>) -> i32 {
@@ -50,12 +56,6 @@ fn calculate_differences(arr1: &Vec<i32>, arr2: &Vec<i32>) -> i32 {
     sum
 }
 
-// Step 1: Read file content
-fn read_file(path: &str) -> Result<String, std::io::Error> {
-    fs::read_to_string(path)
-}
-
-// Step 2: Process content and create arrays
 fn process_content(contents: &str) -> Result<(Vec<i32>, Vec<i32>), &'static str> {
     let mut left_vals = Vec::new();
     let mut right_vals = Vec::new();
