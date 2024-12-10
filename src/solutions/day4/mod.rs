@@ -39,6 +39,42 @@ fn part1(grid: &[Vec<char>]) -> usize {
     count
 }
 
+fn part2(grid: &[Vec<char>]) -> usize {
+    let rows = grid.len();
+    let cols = grid[0].len();
+    let mut count = 0;
+
+
+
+    // Iterate through each cell in the grid, excluding boundary cells
+    for i in 1..rows - 1 {
+        for j in 1..cols - 1 {
+            let mut left_down = false;
+            let mut right_up = false;
+            // Check if the center is 'A'
+            if grid[i][j] == 'A' {
+                // Check for Forward X-MAS (MAS diagonal top-left to bottom-right)
+                if grid[i - 1][j - 1] == 'M' && grid[i + 1][j + 1] == 'S' || 
+                   grid[i - 1][j - 1] == 'S' && grid[i + 1][j + 1] == 'M' {
+                    // println!("Started left T to BL X-{}, Y={}!",i, j );
+                    left_down = true;
+                }
+                
+                // Check for Backward X-MAS (MAS diagonal bottom-left to top-right)
+                if grid[i - 1][j + 1] == 'S' && grid[i + 1][j - 1] == 'M'  ||
+                   grid[i - 1][j + 1] == 'M' && grid[i + 1][j - 1] == 'S' {
+                    // println!("Started  X-{}, Y={}!",i, j );
+                    right_up = true;
+                }
+                if left_down && right_up{
+                    count += 1;
+                }
+            }
+        }
+    }
+
+    count
+}
 
 
 pub fn solve(day: u32) {
