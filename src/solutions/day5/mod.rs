@@ -1,5 +1,5 @@
 use crate::utils;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, VecDeque};
 
 fn part1(graph: &HashMap<i32, Vec<i32>>, second_part_array: &Vec<Vec<i32>>) -> i32 {
     let mut middle_sum = 0;
@@ -12,64 +12,83 @@ fn part1(graph: &HashMap<i32, Vec<i32>>, second_part_array: &Vec<Vec<i32>>) -> i
 }
 
 
-fn part2(graph: &HashMap<i32, Vec<i32>>, second_part_array: &Vec<Vec<i32>>) -> i32 {
-    let mut corrected_lines = Vec::new();
-    
-    for elements in second_part_array {
-        // Check if the line follows the graph rules
-        let is_valid = elements.windows(2).all(|pair| {
-            if let Some(neighbors) = graph.get(&pair[0]) {
-                neighbors.contains(&pair[1])
-            } else {
-                false
+fn topological_sort(arr: &Vec<i32>, graph: &HashMap<i32, Vec<i32>>) -> Option<Vec<i32>> {
+    // Initialize in-degree for each node in the array
+    let mut in_degree: HashMap<i32, usize> = HashMap::new();
+    for &node in arr {
+        in_degree.entry(node).or_insert(0);
+    }
+
+    // Compute in-degree based on the graph's edges
+    for &node in arr {
+        if let Some(neighbors) = graph.get(&node) {
+            for &neighbor in neighbors {
+                if arr.contains(&neighbor) {
+                    *in_degree.entry(neighbor).or_insert(0) += 1;
+                }
             }
-        });
-        if !is_valid {
-            corrected_lines.push(correct_order(&elements, &graph)); // Correct the line
         }
     }
-    // corrected_lines
 
+    // Queue for nodes with in-degree 0
+    let mut queue: VecDeque<i32> = in_degree
+        .iter()
+        .filter_map(|(&node, &deg)| if deg == 0 { Some(node) } else { None })
+        .collect();
+
+    let mut sorted = Vec::new();
+
+    while let Some(node) = queue.pop_front() {
+        sorted.push(node);
+
+        if let Some(neighbors) = graph.get(&node) {
+            for &neighbor in neighbors {
+                if arr.contains(&neighbor) {
+                    if let Some(deg) = in_degree.get_mut(&neighbor) {
+                        *deg -= 1;
+                        if *deg == 0 {
+                            queue.push_back(neighbor);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if sorted.len() == arr.len() {
+        Some(sorted)
+    } else {
+        // Cycle detected or incomplete sorting
+        None
+    }
+}
+
+fn part2(graph: &HashMap<i32, Vec<i32>>, second_part_array: &Vec<Vec<i32>>) -> i32 {
     let mut middle_sum = 0;
-    for line in corrected_lines {
-        middle_sum += line[line.len() / 2]; // Add the middle element value
+    for arr in second_part_array {
+        // Check if the array follows the graph's order
+        let is_correct = arr.windows(2).all(|w| {
+            graph
+                .get(&w[0])
+                .map_or(false, |n| n.contains(&w[1]))
+        });
+
+        if !is_correct {
+            // Reorder the array using topological sort
+            if let Some(sorted) = topological_sort(arr, graph) {
+                // println!("Original: {:?} --> Reordered: {:?}", arr, sorted);
+                let middle = sorted[sorted.len() / 2];
+                middle_sum += middle;
+            } else {
+                println!("Failed to sort array (possible cycle or incomplete constraints): {:?}", arr);
+            }
+        }
     }
     middle_sum
 }
 
-// Correct the order of elements in a line based on the graph
-fn correct_order(line: &Vec<i32>, graph: &HashMap<i32, Vec<i32>>) -> Vec<i32> {
-    let mut visited = HashSet::new();
-    let mut result = Vec::new();
-    for &element in line {
-        if !graph.contains_key(&element) {
-            println!("Warning: Element {} is not defined in the graph!", element);
-        }
-    }
-    // Helper function for DFS
-    
-    fn dfs(node: i32, graph: &HashMap<i32, Vec<i32>>, visited: &mut HashSet<i32>, result: &mut Vec<i32>) {
-        if visited.contains(&node) {
-            return;
-        }
-        visited.insert(node);
-        if let Some(neighbors) = graph.get(&node) {
-            for &neighbor in neighbors {
-                dfs(neighbor, graph, visited, result);
-            }
-        }
-        result.push(node);
-    }
 
-    for &node in line {
-        dfs(node, graph, &mut visited, &mut result);
-    }
 
-    // Reverse the result to get the correct topological order
-    result.reverse();
-    // Retain only the elements from the original line
-    result.into_iter().filter(|x| line.contains(x)).collect()
-}
 
 fn get_graph(graph_input: &str) ->HashMap<i32, Vec<i32>>{
     let mut graph: HashMap<i32, Vec<i32>> = HashMap::new();
