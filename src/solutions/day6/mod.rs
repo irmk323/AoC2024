@@ -45,16 +45,26 @@ fn part1(grid: &Grid) -> usize {
 
     // 移動のシミュレーション
     let max_steps = 90000; // 安全策として最大ステップ数を設定
-    let visited = simulate_movement(&grid, start_pos, start_dir, max_steps);
+    let  (visited, _reached_edge)  = simulate_movement(&grid, start_pos, start_dir, max_steps);
     visited.len()
 }
 
 
 
 
-// fn part2(graph: &HashMap<i32, Vec<i32>>, second_part_array: &Vec<Vec<i32>>) -> i32 {
+fn part2(grid: &Grid) -> usize {
+    // 開始位置と方向の特定
+    let (start_pos, start_dir) = match find_start(&grid) {
+        Some((pos, dir)) => (pos, dir),
+        None => {
+            println!("開始位置 '^' がグリッド内に見つかりません。");
+            return 0;
+        }
+    };
 
-// }
+    let problematic_positions = find_problematic_positions(&grid, start_pos, start_dir);
+    problematic_positions.len()
+}
 
 
 fn find_start(grid: &Grid) -> Option<((usize, usize), Direction)> {
@@ -96,11 +106,13 @@ fn simulate_movement(
     start_pos: (usize, usize),
     start_dir: Direction,
     max_steps: usize,
-) -> HashSet<(usize, usize)> {
+) -> (HashSet<(usize, usize)>, bool){
     let mut visited: HashSet<(usize, usize)> = HashSet::new();
     let mut current_pos = start_pos;
     let mut current_dir = start_dir;
     visited.insert(current_pos);
+
+    let mut loop_ = false;
 
     for _step in 0..max_steps {
         // 現在の方向に基づいて次の位置を計算
@@ -111,6 +123,7 @@ fn simulate_movement(
         // 新しい位置がグリッド外に出る場合、終了
         if new_x < 0 || new_x >= grid.len() as isize || new_y < 0 || new_y >= grid[0].len() as isize {
             println!("ガードがグリッドのエッジに到達しました: ({}, {})", current_pos.0, current_pos.1);
+            loop_ = false;
             break;
         }
 
@@ -127,12 +140,46 @@ fn simulate_movement(
             // 移動後の位置がエッジなら終了
             if is_on_edge(grid, current_pos) {
                 // println!("ガードがグリッドのエッジに到達しました: ({}, {})", current_pos.0, current_pos.1);
+                loop_ = false;
                 break;
+            }
+            // Check for loop by position and direction
+            let state = current_pos;
+            if !visited.insert(state) {
+                loop_ = true; // Revisited state, infinite loop detected
+            }            
+        }
+    }
+
+    (visited, loop_)
+}
+
+/// List all positions where placing an obstacle causes an infinite loop
+fn find_problematic_positions(grid: &Grid, start_pos: (usize, usize), start_dir: Direction) -> Vec<(usize, usize)> {
+    let mut problematic = Vec::new();
+
+    for i in 0..grid.len() {
+        for j in 0..grid[0].len() {
+            // Skip if the cell is already an obstacle or the start position
+            if is_obstacle(grid, (i, j)) || (i, j) == start_pos {
+                continue;
+            }
+
+            // Create a modified grid with an obstacle at (i, j)
+            let mut modified_grid = grid.clone();
+            modified_grid[i][j] = '#';
+
+            // Simulate movement
+            let _max_steps = 10000;
+            let (_visited, reached_edge)= simulate_movement(&modified_grid, start_pos, start_dir,_max_steps);
+            if reached_edge{
+                // If infinite loop detected, record the position
+                problematic.push((i, j));
             }
         }
     }
 
-    visited
+    problematic
 }
 
 /// グリッドを表示する関数（オプション）
@@ -156,8 +203,8 @@ pub fn solve(day: u32) {
     if let Ok(contents) = utils::read_file(&format!("src/solutions/day{}/input.txt", day)) {
         let grid =  parse_grid(&contents);
         let part1 = part1(&grid) ; 
-        // let part2 = part2(&graph,&second_part_array);
+        let part2 = part2(&grid);
         println!("Part1:  {}", part1);
-        // println!("Part2:  {:?}", part2);
+        println!("Part2:  {:?}", part2);
     }
 }
