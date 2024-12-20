@@ -112,7 +112,7 @@ fn simulate_movement(
     let mut current_dir = start_dir;
     visited.insert(current_pos);
 
-    let mut loop_ = false;
+    let mut loop_detected = false;
 
     for _step in 0..max_steps {
         // 現在の方向に基づいて次の位置を計算
@@ -123,7 +123,7 @@ fn simulate_movement(
         // 新しい位置がグリッド外に出る場合、終了
         if new_x < 0 || new_x >= grid.len() as isize || new_y < 0 || new_y >= grid[0].len() as isize {
             println!("ガードがグリッドのエッジに到達しました: ({}, {})", current_pos.0, current_pos.1);
-            loop_ = false;
+            loop_detected = false;
             break;
         }
 
@@ -140,18 +140,18 @@ fn simulate_movement(
             // 移動後の位置がエッジなら終了
             if is_on_edge(grid, current_pos) {
                 // println!("ガードがグリッドのエッジに到達しました: ({}, {})", current_pos.0, current_pos.1);
-                loop_ = false;
+                loop_detected = false;
                 break;
             }
             // Check for loop by position and direction
             let state = current_pos;
             if !visited.insert(state) {
-                loop_ = true; // Revisited state, infinite loop detected
+                loop_detected = true; // Revisited state, infinite loop detected
             }            
         }
     }
 
-    (visited, loop_)
+    (visited, loop_detected)
 }
 
 /// List all positions where placing an obstacle causes an infinite loop
@@ -171,8 +171,8 @@ fn find_problematic_positions(grid: &Grid, start_pos: (usize, usize), start_dir:
 
             // Simulate movement
             let _max_steps = 10000;
-            let (_visited, reached_edge)= simulate_movement(&modified_grid, start_pos, start_dir,_max_steps);
-            if reached_edge{
+            let (_visited, loop_detected)= simulate_movement(&modified_grid, start_pos, start_dir,_max_steps);
+            if loop_detected{
                 // If infinite loop detected, record the position
                 problematic.push((i, j));
             }
