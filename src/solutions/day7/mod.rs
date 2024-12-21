@@ -8,6 +8,13 @@ struct Entry {
     values: Vec<u128>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Operator {
+    Add,
+    Multiply,
+    Concatenate,
+}
+
 fn part1(content: &str) -> u128 {
 
     let entries = match parse_input(&content) {
@@ -109,20 +116,110 @@ fn sum_matching_prefixes(entries: &[Entry]) -> u128 {
     total_sum
 }
 
-// fn part2(grid: &Grid) -> usize {
+fn part2(content: &str) -> u128 {
+    let entries = match parse_input(content) {
+        Ok(entries) => entries, // If successful, get the Vec<Entry>
+        Err(_) => return 0, // Handle the error case (return 0 or some default value)
+    };
+    let part2_result = sum_matching_prefixes_for_part2(&entries);
+    part2_result
+}
 
-// }
+/// 条件を満たすエントリのプレフィックスを合計する関数
+fn sum_matching_prefixes_for_part2(entries: &[Entry]) -> u128 {
+    entries.iter()
+        .filter(|entry| check_operator_sequences_part2(entry.prefix, &entry.values))
+        .map(|entry| entry.prefix)
+        .sum()
+}
+
+fn generate_operator_sequences_part2(n: usize) -> Vec<Vec<Operator>> {
+    let total_combinations = 3usize.pow(n as u32); // 3^n combinations
+    let mut sequences = Vec::with_capacity(total_combinations);
+    
+    for mask in 0..total_combinations {
+        let mut seq = Vec::with_capacity(n);
+        let mut temp = mask;
+        for _ in 0..n {
+            let op_index = temp % 3;
+            let op = match op_index {
+                0 => Operator::Add,
+                1 => Operator::Multiply,
+                2 => Operator::Concatenate,
+                _ => unreachable!(),
+            };
+            seq.push(op);
+            temp /= 3;
+        }
+        sequences.push(seq);
+    }
+    
+    sequences
+}
+
+fn evaluate_expression_part2(values: &[u128], operators: &[Operator]) -> Option<u128> {
+    if values.is_empty() {
+        return None;
+    }
+    
+    let mut result = values[0];
+    
+    for (i, &op) in operators.iter().enumerate() {
+        if i + 1 >= values.len() {
+            return None; // 演算子が値より多い場合は無効
+        }
+        let next = values[i + 1];
+        match op {
+            Operator::Add => {
+                result += next;
+            }
+            Operator::Multiply => {
+                result *= next;
+            }
+            Operator::Concatenate => {
+                // Concatenation: result と next を結合
+                let concatenated = result.to_string() + &next.to_string();
+                match concatenated.parse::<u128>() {
+                    Ok(val) => result = val,
+                    Err(_) => return None, // パースエラー（オーバーフローなど）
+                }
+            }
+        }
+    }
+    
+    Some(result)
+}
 
 
-
+fn check_operator_sequences_part2(prefix: u128, values: &[u128]) -> bool {
+    if values.len() == 0 {
+        return false;
+    }
+    if values.len() == 1 {
+        return values[0] == prefix;
+    }
+    
+    let n = values.len() - 1;
+    let operator_sequences = generate_operator_sequences_part2(n);
+    
+    for ops in operator_sequences {
+        if let Some(result) = evaluate_expression_part2(values, &ops) {
+            if result == prefix {
+                return true;
+            }
+        }
+    }
+    
+    false
+}
 
 pub fn solve(day: u32) {
     println!("Started Day{}!",day );
 
     if let Ok(contents) = utils::read_file(&format!("src/solutions/day{}/input.txt", day)) {
-        let part1 = part1(&contents) ; 
-        // let part2 = part2(&grid);
+        let part1: u128 = part1(&contents) ; 
+        let part2 = part2(&contents);
         println!("Part1:  {}", part1);
-        // println!("Part2:  {:?}", part2);
+        println!("Part2:  {}", part2);
     }
 }

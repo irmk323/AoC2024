@@ -1,5 +1,5 @@
 use crate::utils;
-use std::collections::{ HashSet};
+use std::collections::HashSet;
 
 type Grid = Vec<Vec<char>>;
 
