@@ -7,6 +7,7 @@ mod solutions {
     pub mod day6;
     pub mod day7;
     pub mod day8;
+    pub mod day9;
 }
 mod utils; 
 
@@ -25,6 +26,7 @@ fn main() {
         6 => solutions::day6::solve(day),
         7 => solutions::day7::solve(day),
         8 => solutions::day8::solve(day),
+        9 => solutions::day9::solve(day),
         // ... add more days
         _ => println!("Day {} not implemented yet", day),
     }
