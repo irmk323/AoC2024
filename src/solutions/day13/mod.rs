@@ -5,12 +5,12 @@ use crate::utils;
 /// 各ブロックの情報を保持する構造体
 #[derive(Debug)]
 struct Block {
-    a_x: i32,   // Button AのX増分
-    a_y: i32,   // Button AのY増分
-    b_x: i32,   // Button BのX増分
-    b_y: i32,   // Button BのY増分
-    prize_x: i32, // PrizeのX目標値
-    prize_y: i32, // PrizeのY目標値
+    a_x: i128,   // Button AのX増分
+    a_y: i128,   // Button AのY増分
+    b_x: i128,   // Button BのX増分
+    b_y: i128,   // Button BのY増分
+    prize_x: i128, // PrizeのX目標値
+    prize_y: i128, // PrizeのY目標値
 }
 
 /// 入力文字列を解析し、ブロックのリストを生成する関数
@@ -42,12 +42,12 @@ fn parse_blocks(input: &str) -> Vec<Block> {
                     for part in parts {
                         let part = part.trim();
                         if let Some(x_val) = part.strip_prefix("X+") {
-                            a_x = match x_val.parse::<i32>() {
+                            a_x = match x_val.parse::<i128>() {
                                 Ok(val) => val,
                                 Err(_) => { valid = false; break; },
                             };
                         } else if let Some(y_val) = part.strip_prefix("Y+") {
-                            a_y = match y_val.parse::<i32>() {
+                            a_y = match y_val.parse::<i128>() {
                                 Ok(val) => val,
                                 Err(_) => { valid = false; break; },
                             };
@@ -68,12 +68,12 @@ fn parse_blocks(input: &str) -> Vec<Block> {
                     for part in parts {
                         let part = part.trim();
                         if let Some(x_val) = part.strip_prefix("X+") {
-                            b_x = match x_val.parse::<i32>() {
+                            b_x = match x_val.parse::<i128>() {
                                 Ok(val) => val,
                                 Err(_) => { valid = false; break; },
                             };
                         } else if let Some(y_val) = part.strip_prefix("Y+") {
-                            b_y = match y_val.parse::<i32>() {
+                            b_y = match y_val.parse::<i128>() {
                                 Ok(val) => val,
                                 Err(_) => { valid = false; break; },
                             };
@@ -94,12 +94,12 @@ fn parse_blocks(input: &str) -> Vec<Block> {
                     for part in parts {
                         let part = part.trim();
                         if let Some(x_val) = part.strip_prefix("X=") {
-                            prize_x = match x_val.parse::<i32>() {
+                            prize_x = match x_val.parse::<i128>() {
                                 Ok(val) => val,
                                 Err(_) => { valid = false; break; },
                             };
                         } else if let Some(y_val) = part.strip_prefix("Y=") {
-                            prize_y = match y_val.parse::<i32>() {
+                            prize_y = match y_val.parse::<i128>() {
                                 Ok(val) => val,
                                 Err(_) => { valid = false; break; },
                             };
@@ -129,7 +129,7 @@ fn parse_blocks(input: &str) -> Vec<Block> {
 
 
 /// 各ブロックに対して最小トークン数を計算する関数
-fn find_min_tokens(block: &Block) -> Option<i32> {
+fn find_min_tokens(block: &Block) -> Option<i128> {
     let a1 = block.a_x;
     let a2 = block.a_y;
     let b1 = block.b_x;
@@ -146,6 +146,7 @@ fn find_min_tokens(block: &Block) -> Option<i32> {
     }
 
     let max_xA = pX / a1;
+    // println!("max_xA {:?}", max_xA);
 
     for xA in 0..=max_xA {
         let remaining_X = pX - (xA * a1);
@@ -169,28 +170,94 @@ fn find_min_tokens(block: &Block) -> Option<i32> {
     min_tokens
 }
 
+/// 各ブロックに対して最小トークン数を計算する関数（パート2用）
+fn find_min_tokens_part2(block: &Block) -> Option<u128> {
+    let a1 = block.a_x;
+    let a2 = block.a_y;
+    let b1 = block.b_x;
+    let b2 = block.b_y;
+    let pX = block.prize_x;
+    let pY = block.prize_y;
+
+    let D = a1 * b2 - a2 * b1;
+
+    if D == 0 {
+        return None; // 解なし（行列が特異）
+    }
+
+    // xA = (pX * b2 - pY * b1) / D
+    // xB = (a1 * pY - a2 * pX) / D
+
+    // 両方が整数かどうかを確認
+    if (pX * b2 - pY * b1) % D != 0 || (a1 * pY - a2 * pX) % D != 0 {
+        return None; // 整数解なし
+    }
+
+    let xA = (pX * b2 - pY * b1) / D;
+    let xB = (a1 * pY - a2 * pX) / D;
+
+    // 非負整数であることを確認
+    if xA < 0 || xB < 0 {
+        return None; // 非負でない解
+    }
+
+    let tokens = (3 * xA) as u128 + (xB) as u128;
+
+    Some(tokens)
+}
+
 
 /// メインのソルバーファンクション
 pub fn solve(day: u32) {
     println!("Started Day{}!", day);
     if let Ok(contents) = utils::read_file(&format!("src/solutions/day{}/input.txt", day)) {
     
-        let blocks = parse_blocks(&contents);
-        println!("Total Tokens: {:?}", blocks);
-        let mut total_tokens: i32 = 0;
+        let mut blocks = parse_blocks(&contents);
+        // println!("Total Tokens: {:?}", blocks);
+        let mut total_tokens: i128 = 0;
         
         for (index, block) in blocks.iter().enumerate() {
             match find_min_tokens(block) {
                 Some(tokens) => {
-                    println!("Block {}: Minimum Tokens = {}", index + 1, tokens);
+                    // println!("Block {}: Minimum Tokens = {}", index + 1, tokens);
                     total_tokens += tokens;
                 },
                 None => {
-                    println!("Block {}: No exact combination found. Ignored.", index + 1);
+                    // println!("Block {}: No exact combination found. Ignored.", index + 1);
                 },
             }
         }
+
+        println!("Total Tokens (Part 1): {}", total_tokens); 
+
+
+        // PrizeのXとYをそれぞれ10000000000000増加
+        let adjustment = 10_000_000_000_000i128;
+        for block in blocks.iter_mut() {
+            block.prize_x += adjustment;
+            block.prize_y += adjustment;
+        }
+        let mut total_tokens_part2: u64 = 0;
+
+        for (index, block) in blocks.iter().enumerate() {
+            match find_min_tokens_part2(block) {
+                Some(tokens) => {
+                    // println!(
+                    //     "Block {}: Minimum Tokens = {}",
+                    //     index + 1,
+                    //     tokens
+                    // );
+                    total_tokens_part2 += tokens as u64;
+                }
+                None => {
+                    // println!(
+                    //     "Block {}: No exact combination found. Ignored.",
+                    //     index + 1
+                    // );
+                }
+            }
+        }
     
-        println!("Total Tokens: {}", total_tokens);
+        println!("Total Tokens (Part 2): {}", total_tokens_part2);   
     }
 }
