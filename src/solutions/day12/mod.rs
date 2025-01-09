@@ -334,10 +334,10 @@ pub fn solve(day: u32) {
     let total_price = calculate_total_price(&regions);
     println!("Part 1 Total Price: {}", total_price);
 
-        // 全区域の探索
-        let regions_part2 = find_all_regions(&grid, false);
-        // 総価格の計算
-        let total_price_part2 = calculate_total_price(&regions_part2);
-        println!("Part 2 Total Price: {}", total_price_part2);
+    // 全区域の探索
+    let regions_part2 = find_all_regions(&grid, false);
+    // 総価格の計算
+    let total_price_part2 = calculate_total_price(&regions_part2);
+    println!("Part 2 Total Price: {}", total_price_part2);
     }
 }
